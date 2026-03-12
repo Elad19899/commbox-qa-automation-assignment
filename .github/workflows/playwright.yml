@@ -1,10 +1,30 @@
 name: Playwright Tests
 
 on:
+  # Triggers the workflow on push or pull request events for main and master branches
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  
+  # Allows manual triggering of the workflow from the GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      test_type:
+        description: 'Filter tests by tag or type (e.g., smoke, regression)'
+        required: true
+        default: 'all'
+        type: string
+
+  # Schedules the workflow to run automatically every day at 06:00 UTC (08:00 Israel Time)
   schedule:
     - cron: '0 6 * * *'
 
@@ -12,31 +32,44 @@ jobs:
   test:
     name: Run Messaging App tests
     runs-on: ubuntu-latest
+    
+    # Prevents the job from running indefinitely. Will be cancelled after 30 minutes.
+    timeout-minutes: 30 
+    
     steps:
+    # Checks out the repository so the job can access the source code
     - uses: actions/checkout@v4
     
+    # Sets up the Node.js environment
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 20
         
+    # Installs dependencies using a clean install (npm ci) for CI environments
     - name: Install dependencies
       run: npm ci
 
+    # Installs necessary Playwright browsers and system dependencies
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
+    # Executes Playwright tests. Uses the environment input from manual trigger, 
+    # or defaults to 'staging' for automatic triggers.
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --project=${{ github.event.inputs.environment || 'staging' }}
       
+    # Installs Allure Commandline globally to generate the visual report
     - name: Install Allure CLI
       if: always()
       run: npm install -g allure-commandline
 
+    # Generates the Allure Report based on the results from the test run
     - name: Generate Allure Report
       if: always()
       run: npx allure generate allure-results --clean -o allure-report
       
+    # Uploads the generated Allure report as a GitHub artifact (available for download)
     - name: Upload Allure report
       if: always()
       uses: actions/upload-artifact@v4
