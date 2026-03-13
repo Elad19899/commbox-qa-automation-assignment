@@ -73,7 +73,7 @@ jobs:
     - name: Generate Allure Report
       if: always()
       continue-on-error: true
-      run: npx allure generate allure-results --clean -o allure-report
+      run: npx allure generate allure-results --clean -o allure-report --single-file
       
     - name: Publish Allure Report to GitHub Pages
       if: always()
