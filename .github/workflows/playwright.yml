@@ -33,6 +33,9 @@ jobs:
     name: Run Messaging App tests
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write
+      
     # Prevents the job from running indefinitely. Will be cancelled after 30 minutes.
     timeout-minutes: 30 
     
