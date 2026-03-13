@@ -57,7 +57,9 @@ jobs:
     # Executes Playwright tests. Uses the environment input from manual trigger, 
     # or defaults to 'staging' for automatic triggers.
     - name: Run Playwright tests
-      run: npx playwright test --project=${{ github.event.inputs.environment || 'staging' }}
+      run: npx playwright test
+      env:
+        ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
       
     # Installs Allure Commandline globally to generate the visual report
     - name: Install Allure CLI
