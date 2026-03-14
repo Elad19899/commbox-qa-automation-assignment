@@ -17,17 +17,23 @@ test.describe("Dummy Messaging App", () => {
     // 1. Mock the HTML file delivery
     // We intercept requests to our fake localhost URL and serve the local HTML file content directly.
     // This allows us to load the UI locally over an HTTP protocol bypassing tight browser CORS limits.
-    await page.route("http://localhost:8080/dummy-messaging-app.html", async (route) => {
-      const html = fs.readFileSync(path.resolve(process.cwd(), "dummy-messaging-app.html"), "utf8");
-      await route.fulfill({
-        status: 200,
-        contentType: "text/html",
-        body: html,
-      });
-    });
+    await page.route(
+      "http://localhost:8080/dummy-messaging-app.html",
+      async (route) => {
+        const html = fs.readFileSync(
+          path.resolve(process.cwd(), "dummy-messaging-app.html"),
+          "utf8",
+        );
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: html,
+        });
+      },
+    );
 
     // 2. Mock the backend API response
-    // The HTML app attempts to make a POST request to /api/send-message. 
+    // The HTML app attempts to make a POST request to /api/send-message.
     // Since we have no real server, we intercept that fetch call and simulate a successful response.
     await page.route("**/api/send-message", async (route) => {
       const request = route.request();
@@ -52,11 +58,19 @@ test.describe("Dummy Messaging App", () => {
   });
 
   /**
+   * The afterEach hook runs after every single test in this describe block.
+   * It ensures the browser page is explicitly closed cleanly after each test runs.
+   */
+  test.afterEach(async ({ page }) => {
+    await page.close();
+  });
+
+  /**
    * Standard happy path test.
    * Verifies that after entering text and clicking send, the message appears in the chat list.
    */
   test("should send a message and display it in the list", async ({ page }) => {
-    const testMessage = "Hello Playwright!";
+    const testMessage = "Random Text!";
 
     // Verify initial state: Ensure the list is initially empty before we do anything
     let messages = await messagingPage.getMessages();
@@ -79,13 +93,13 @@ test.describe("Dummy Messaging App", () => {
 
   /**
    * Edge case test.
-   * Verifies that when clicking the "Send" button without typing anything, 
+   * Verifies that when clicking the "Send" button without typing anything,
    * the app gracefully ignores the input rather than posting empty blanks.
    */
   test("should ignore empty messages", async ({ page }) => {
     // Attempt to send an empty string
     await messagingPage.sendMessage("");
-    
+
     // Verify that the message list remains completely empty (no new items rendered)
     await expect(messagingPage.messageList.locator("li")).toHaveCount(0);
   });
